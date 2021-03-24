@@ -12,8 +12,12 @@ if Code.ensure_loaded?(Mint.HTTP) do
         {:ok, latest_version} ->
           if latest_version != PeriodsProvider.version() do
             link = "https://data.iana.org/time-zones/releases/tzdata#{latest_version}.tar.gz"
-            Logger.warn("Tz found a more recent time zone database available for download at #{link}")
+
+            Logger.warn(
+              "Tz found a more recent time zone database available for download at #{link}"
+            )
           end
+
         :error ->
           Logger.error("Tz failed to read the latest version of the IANA time zone database")
       end
@@ -37,7 +41,8 @@ if Code.ensure_loaded?(Mint.HTTP) do
     end
 
     defp schedule_work() do
-      Process.send_after(self(), :work, 24 * 60 * 60 * 1000) # In 24 hours
+      # In 24 hours
+      Process.send_after(self(), :work, 24 * 60 * 60 * 1000)
     end
   end
 end
