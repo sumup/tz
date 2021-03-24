@@ -6,6 +6,12 @@ if Code.ensure_loaded?(Mint.HTTP) do
     alias Tz.HTTP.HTTPResponse
 
     def request(method, path, opts) do
+      opts =
+        Enum.reject(opts, fn
+          {_k, nil} -> true
+          {_k, _v} -> false
+        end)
+
       hostname = Keyword.fetch!(opts, :hostname)
       headers = Keyword.get(opts, :headers, [])
 
