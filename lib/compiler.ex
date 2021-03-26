@@ -16,12 +16,14 @@ defmodule Tz.Compiler do
       |> Enum.max()
 
     {periods_and_links, ongoing_rules} =
-      for filename <- ~w(africa antarctica asia australasia backward etcetera europe northamerica southamerica)s do
+      for filename <-
+            ~w(africa antarctica asia australasia backward etcetera europe northamerica southamerica)s do
         {zone_records, rule_records, link_records, ongoing_rules} =
           IanaFileParser.parse(Path.join([:code.priv_dir(:tz), tz_data_dir_name, filename]))
 
         Enum.each(rule_records, fn {rule_name, rules} ->
-          ongoing_rules_count = Enum.count(rules, & &1.to == :max)
+          ongoing_rules_count = Enum.count(rules, &(&1.to == :max))
+
           if ongoing_rules_count > 2 do
             raise "unexpected case: #{ongoing_rules_count} ongoing rules for rule \"#{rule_name}\""
           end
@@ -45,10 +47,12 @@ defmodule Tz.Compiler do
         {periods ++ links, ongoing_rules}
       end
       |> Enum.reduce(
-          {[], %{}},
-          fn {periods_and_links, ongoing_rules}, {all_periods_and_links, all_ongoing_rules} ->
-            {periods_and_links ++ all_periods_and_links, Map.merge(ongoing_rules, all_ongoing_rules)}
-          end)
+        {[], %{}},
+        fn {periods_and_links, ongoing_rules}, {all_periods_and_links, all_ongoing_rules} ->
+          {periods_and_links ++ all_periods_and_links,
+           Map.merge(ongoing_rules, all_ongoing_rules)}
+        end
+      )
 
     compile_periods(periods_and_links, tz_data_dir_name)
 
@@ -72,7 +76,7 @@ defmodule Tz.Compiler do
   def compile_periods(periods_and_links, tz_data_dir_name) do
     quoted = [
       quote do
-        @moduledoc(false)
+        @moduledoc false
 
         def version() do
           unquote(String.trim(tz_data_dir_name, "tzdata"))
@@ -86,6 +90,7 @@ defmodule Tz.Compiler do
                 periods(unquote(Macro.escape(canonical_zone_name)))
               end
             end
+
           {:periods, zone_name, periods} ->
             quote do
               def periods(unquote(zone_name)) do
@@ -109,7 +114,7 @@ defmodule Tz.Compiler do
   defp compile_map_ongoing_changing_rules(ongoing_rules) do
     quoted = [
       quote do
-        @moduledoc(false)
+        @moduledoc false
       end,
       for {rule_name, rules} <- ongoing_rules do
         quote do

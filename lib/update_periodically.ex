@@ -28,7 +28,8 @@ if Code.ensure_loaded?(Mint.HTTP) do
     end
 
     defp schedule_work() do
-      Process.send_after(self(), :work, 24 * 60 * 60 * 1000) # In 24 hours
+      # In 24 hours
+      Process.send_after(self(), :work, 24 * 60 * 60 * 1000)
     end
   end
 end

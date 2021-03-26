@@ -20,9 +20,12 @@ if Code.ensure_loaded?(Mint.HTTP) do
     end
 
     def fetch_iana_tz_version() do
-      case HTTPClient.request("GET", "/time-zones/tzdb/version", hostname: "data.iana.org") do
+      opts = Keyword.put(http_client_config(), :hostname, "data.iana.org")
+
+      case HTTPClient.request("GET", "/time-zones/tzdb/version", opts) do
         %HTTPResponse{body: body, status_code: 200} ->
           {:ok, body |> List.first() |> String.trim()}
+
         _ ->
           :error
       end
@@ -36,9 +39,12 @@ if Code.ensure_loaded?(Mint.HTTP) do
               :ok ->
                 delete_tz_database(PeriodsProvider.version())
                 :updated
-              _ -> :error
+
+              _ ->
+                :error
             end
           end
+
         :error ->
           Logger.error("Tz failed to read the latest version of the IANA time zone database")
           :no_update
@@ -50,18 +56,25 @@ if Code.ensure_loaded?(Mint.HTTP) do
         {:ok, content} ->
           extract_tz_database(version, content)
           :ok
+
         :error ->
-          Logger.error("Tz failed to download the latest archived IANA time zone database (version #{version})")
+          Logger.error(
+            "Tz failed to download the latest archived IANA time zone database (version #{version})"
+          )
+
           :error
       end
     end
 
     defp download_tz_database(version) do
       Logger.info("Tz is downloading the latest IANA time zone database (version #{version})...")
-      case HTTPClient.request("GET", "/time-zones/releases/tzdata#{version}.tar.gz", hostname: "data.iana.org") do
+      opts = Keyword.put(http_client_config(), :hostname, "data.iana.org")
+
+      case HTTPClient.request("GET", "/time-zones/releases/tzdata#{version}.tar.gz", opts) do
         %HTTPResponse{body: body, status_code: 200} ->
           Logger.info("Tz download done")
           {:ok, body}
+
         _ ->
           :error
       end
@@ -85,11 +98,13 @@ if Code.ensure_loaded?(Mint.HTTP) do
         'iso3166.tab',
         'zone1970.tab'
       ]
-      :ok = :erl_tar.extract(tmp_archive_path, [
-        :compressed,
-        {:cwd, Path.join(:code.priv_dir(:tz), tz_data_dir)},
-        {:files, files_to_extract}
-      ])
+
+      :ok =
+        :erl_tar.extract(tmp_archive_path, [
+          :compressed,
+          {:cwd, Path.join(:code.priv_dir(:tz), tz_data_dir)},
+          {:files, files_to_extract}
+        ])
 
       :ok = File.rm!(tmp_archive_path)
     end
@@ -97,6 +112,10 @@ if Code.ensure_loaded?(Mint.HTTP) do
     defp delete_tz_database(version) do
       Path.join(:code.priv_dir(:tz), "tzdata#{version}")
       |> File.rm_rf!()
+    end
+
+    defp http_client_config do
+      Application.get_env(:tz, Tz.HTTP.HTTPClient, [])
     end
   end
 end

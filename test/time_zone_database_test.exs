@@ -85,7 +85,7 @@ defmodule TimeZoneDatabaseTest do
 
     result = DateTime.from_naive(naive_date_time, time_zone, Tz.TimeZoneDatabase)
 
-    assert {:ok, datetime} = result
+    assert {:ok, _datetime} = result
   end
 
   test "version" do
